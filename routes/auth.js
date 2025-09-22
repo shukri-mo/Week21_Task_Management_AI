@@ -165,4 +165,45 @@ router.get("/me", authenticateToken, async (req, res) => {
   }
 });
 
+//verification endpoint
+
+router.get("/verify/:token", async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    // Find the user with the given verification token
+    const user = await prisma.user.findUnique({
+      where: { verificationToken: token },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid verification token",
+      });
+    }
+
+    // Verify the user
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, verificationToken: null },
+    });
+
+    res.json({
+      success: true,
+      message: "User verified successfully",
+    });
+  } catch (error) {
+    console.error("Verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying user",
+      error: error.message,
+    });
+  }
+});
+
+
+
+
 export default router;
